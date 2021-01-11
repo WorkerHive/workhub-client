@@ -1,13 +1,16 @@
 {
   "name": "@workerhive/client",
-  "version": "0.0.2",
-  "main": "build/index.js",
-  "files": ["dist"],
+  "version": "0.0.3",
+  "main": "dist/index.js",
+  "files": [
+    "dist"
+  ],
   "license": "MIT",
   "dependencies": {
     "@apollo/client": "^3.3.6",
     "apollo-upload-client": "^14.1.3",
-    "camel-case": "^4.1.2"
+    "camel-case": "^4.1.2",
+    "graphql": "^15.4.0"
   },
   "scripts": {
     "test": "node example/index.js",
