@@ -4,7 +4,7 @@ import { camelCase } from 'camel-case';
 export default (models: any, client?: any) => {
     let actions: any = {};
 
-    models.forEach((model : any) => {
+    models.forEach((model: any) => {
         actions[`add${model.name}`] = (item: any) => {
             return client!.mutate({
                 mutation: gql`
@@ -17,7 +17,7 @@ export default (models: any, client?: any) => {
                 variables: {
                     input: item
                 }
-            }).then((r : any) => r.data[`add${model.name}`])
+            }).then((r: any) => r.data[`add${model.name}`])
         }
 
         actions[`delete${model.name}`] = (id: string) => {
@@ -30,7 +30,7 @@ export default (models: any, client?: any) => {
                 variables: {
                     id: id
                 }
-            }).then((r : any) : any => r.data[`delete${model.name}`])
+            }).then((r: any): any => r.data[`delete${model.name}`])
         }
 
         actions[`update${model.name}`] = (id: string, update: any) => {
@@ -41,8 +41,12 @@ export default (models: any, client?: any) => {
                     ${model.def.map((x: any) => x.name).join(`\n`)}
                 }
             }
-        `
-            }).then((r : any) => r.data[`update${model.name}`])
+            `,
+                variables: {
+                    id,
+                    update
+                }
+            }).then((r: any) => r.data[`update${model.name}`])
         }
 
         actions[`get${model.name}`] = (id: any) => {
@@ -57,7 +61,7 @@ export default (models: any, client?: any) => {
                 variables: {
                     id: id
                 }
-            }).then((r : any) => r.data[`${camelCase(model.name)}`])
+            }).then((r: any) => r.data[`${camelCase(model.name)}`])
         }
 
         actions[`get${model.name}s`] = () => {
@@ -69,7 +73,7 @@ export default (models: any, client?: any) => {
                 }
             }
         `
-            }).then((r : any) => r.data[`${camelCase(model.name)}s`])
+            }).then((r: any) => r.data[`${camelCase(model.name)}s`])
         }
     })
     return actions;
