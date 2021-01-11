@@ -36,7 +36,7 @@ export default (models: any, client?: any) => {
         actions[`update${model.name}`] = (id: string, update: any) => {
             return client!.mutate({
                 mutation: gql`
-            mutation Update${model.name}($id: ID, update: ${model.name}Input){
+            mutation Update${model.name}($id: ID, $update: ${model.name}Input){
                 update${model.name}(${camelCase(model.name)}: $update, id: $id){
                     ${model.def.map((x: any) => x.name).join(`\n`)}
                 }
