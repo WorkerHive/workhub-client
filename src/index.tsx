@@ -66,7 +66,7 @@ export const useHub = () => {
 
 export const WorkhubProvider : FC<ProviderProps> = ({children, args, url}) => {
     const [ hub, err] = useHubHook(url);
-    return (<HubContext.Provider value={[hub, err]}>{children}</HubContext.Provider>)
+    return (<HubContext.Provider value={[hub, err]}>{children instanceof Function ? children(hub, err) : children}</HubContext.Provider>)
 }
 
 export class WorkhubClient {
