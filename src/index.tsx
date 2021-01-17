@@ -107,7 +107,7 @@ export class WorkhubClient {
                     }
                 }
             `
-        }).then((r) => r.data.mutableTypes).then((y) => y.map((x : any) => ({name: x.name, def: x.def})))
+        }).then((r) => r.data.crudTypes).then((y) => y.map((x : any) => ({name: x.name, def: x.def})))
     }
 
     setupBasicReads(){
