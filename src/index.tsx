@@ -101,7 +101,7 @@ export class WorkhubClient {
         return this.client!.query({
             query: gql`
                 query GetTypes { 
-                    mutableTypes { 
+                    crudTypes { 
                         name
                         def
                     }
