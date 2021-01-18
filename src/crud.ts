@@ -1,8 +1,26 @@
 import { gql } from '@apollo/client';
 import { camelCase } from 'camel-case';
+import { isNativeType, rawType } from './utils';
 
 export default (models: any, client?: any) => {
     let actions: any = {};
+
+    //Takes a type model and iterates over available keys, if key isn't native getFields will be called again to fill out the query fields
+    const getFields = (type : any) => {
+        return type.def.map((x: any) => {
+            let raw = rawType(x.type);
+
+            if(isNativeType(raw)){
+                return x.name                
+            }else{
+                return `
+                    ${x.name} {
+                        ${getFields(models[raw])}
+                    }
+                `
+            }
+        }).join(`\n`)
+    }
 
     models.forEach((model: any) => {
         actions[`add${model.name}`] = (item: any) => {
@@ -10,7 +28,7 @@ export default (models: any, client?: any) => {
                 mutation: gql`
             mutation Add${model.name}($input: ${model.name}Input){
                 add${model.name}(${camelCase(model.name)}: $input){
-                    ${model.def.map((x: any) => x.name).join(`\n`)}
+                    ${getFields(model)}
                 }
             }
         `,
@@ -38,7 +56,7 @@ export default (models: any, client?: any) => {
                 mutation: gql`
             mutation Update${model.name}($id: ID, $update: ${model.name}Input){
                 update${model.name}(${camelCase(model.name)}: $update, id: $id){
-                    ${model.def.map((x: any) => x.name).join(`\n`)}
+                    ${getFields(model)}
                 }
             }
             `,
@@ -54,7 +72,7 @@ export default (models: any, client?: any) => {
                 query: gql`
             query Get${model.name}($id: ID){
                 ${camelCase(model.name)}(id: $id) {
-                    ${model.def.map((x: any) => x.name).join(`\n`)}   
+                    ${getFields(model)}
                 }
             }
         `,
@@ -69,7 +87,7 @@ export default (models: any, client?: any) => {
                 query: gql`
             query Get${model.name}s {
                 ${camelCase(model.name)}s {
-                    ${model.def.map((x: any) => x.name).join(`\n`)}   
+                    ${getFields(model)}
                 }
             }
         `
