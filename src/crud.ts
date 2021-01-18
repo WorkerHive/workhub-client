@@ -7,6 +7,7 @@ export default (models: any, client?: any) => {
 
     //Takes a type model and iterates over available keys, if key isn't native getFields will be called again to fill out the query fields
     const getFields = (type : any) => {
+        console.log("Get fields for ", type)
         return type.def.map((x: any) => {
             let raw = rawType(x.type);
 
@@ -16,7 +17,7 @@ export default (models: any, client?: any) => {
                 console.log("Mapping another type fields", raw, models, x.type);
                 return `
                     ${x.name} {
-                        ${getFields(models[raw])}
+                        ${getFields(models.filter((a : any) => a.name == raw)[0])}
                     }
                 `
             }
