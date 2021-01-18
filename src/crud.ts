@@ -13,6 +13,7 @@ export default (models: any, client?: any) => {
             if(isNativeType(raw)){
                 return x.name                
             }else{
+                console.log("Mapping another type fields", raw, models, x.type);
                 return `
                     ${x.name} {
                         ${getFields(models[raw])}
