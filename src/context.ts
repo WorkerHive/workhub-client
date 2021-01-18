@@ -7,4 +7,4 @@ declare global {
     }
 }
 
-export const HubContext : Context<[WorkhubClient | null, Error | null]> = createContext<[WorkhubClient | null, Error | null]>([null, null])
+export const HubContext : Context<[WorkhubClient | null, Boolean, Error | null]> = createContext<[WorkhubClient | null, Boolean, Error | null]>([null, false, null])

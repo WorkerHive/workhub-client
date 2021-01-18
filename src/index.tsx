@@ -11,8 +11,9 @@ export {
 }
 
 
-export const useHubHook = (url : string) : [WorkhubClient | null, Error | null] => {
+export const useHubHook = (url : string) : [WorkhubClient | null, Boolean, Error | null] => {
     const [ client, setClient ]  =  React.useState<any>(null);
+    const [ isReady, setReady ] = React.useState<boolean>(false);
     const [ error, setError ] = React.useState<Error | null>(null);
     
     useEffect(() => {
@@ -21,24 +22,31 @@ export const useHubHook = (url : string) : [WorkhubClient | null, Error | null] 
             try{
                 if(window.hubClient){
                     console.log("Existing hub client", window.hubClient)
-                    setClient(window.hubClient as WorkhubClient)
+                    window.hubClient.setup().then(() => {
+                        //Maybe check time since last update?
+                        setClient(window.hubClient as WorkhubClient)
+                        setReady(true)
+                    })
                 }else{
-                    let cli = new WorkhubClient(url);
-                    window.hubClient = cli;
-                    setClient(cli as WorkhubClient)
-
-                    console.log(cli)
+                    let cli = new WorkhubClient(url, () => {
+                        window.hubClient = cli;
+                        setClient(cli as WorkhubClient)
+                        setReady(true)
+                        console.log(cli)
+                    });
                 }
                 setError(null);
             }catch(e){
                 console.error("Error setting up client", e)
                 setClient(null);
+                setReady(false)
                 setError(e)
             }
         }
         async function stopClient(){
             console.log("Stop client")
             setClient(null);
+            setReady(false)
             setError(null);
         }
 
@@ -46,14 +54,14 @@ export const useHubHook = (url : string) : [WorkhubClient | null, Error | null] 
         return () => {
            //stopClient();
         }
-    }, [url, setClient, setError])
+    }, [url, setClient, setError, setReady])
 
-    return [client, error];
+    return [client, isReady, error];
 }
 
 export interface ProviderProps {
     children: any;
-    args: any;
+    args?: any;
     url: string;
 }
 
@@ -65,8 +73,8 @@ export const useHub = () => {
 }
 
 export const WorkhubProvider : FC<ProviderProps> = ({children, args, url}) => {
-    const [ hub, err] = useHubHook(url);
-    return (<HubContext.Provider value={[hub, err]}>{children instanceof Function ? children(hub, err) : children}</HubContext.Provider>)
+    const [ hub, isReady, err] = useHubHook(url);
+    return (<HubContext.Provider value={[hub, isReady, err]}>{children instanceof Function ? children(hub, isReady, err) : children}</HubContext.Provider>)
 }
 
 export class WorkhubClient {
@@ -76,13 +84,23 @@ export class WorkhubClient {
 
     public actions : any=  {};
 
-    constructor(url?: string) {
+    constructor(url?: string, setup_fn?: Function) {
         this.hubUrl = url || 'http://localhost:4002';      
         this.initClient()
-        this.getModels().then((models) => {
-            this.models = models;
-            this.setupBasicReads();
-        })
+
+        if(setup_fn){
+            this.getModels().then((models) => {
+                this.models = models;
+                this.setupBasicReads();
+                setup_fn();
+            })
+        }
+    }
+
+    async setup(){
+        let models = await this.getModels();
+        this.models = models;
+        this.setupBasicReads();
     }
 
     initClient(){
@@ -97,8 +115,8 @@ export class WorkhubClient {
         })
     }
 
-    getModels(){
-        return this.client!.query({
+    async getModels(){
+        let result = await this.client!.query({
             query: gql`
                 query GetTypes { 
                     crudTypes { 
@@ -107,7 +125,9 @@ export class WorkhubClient {
                     }
                 }
             `
-        }).then((r) => r.data.crudTypes).then((y) => y.map((x : any) => ({name: x.name, def: x.def})))
+        })
+        
+        return result.data.crudTypes.map((x: any) => ({name: x.name, def: x.def}))
     }
 
     setupBasicReads(){
