@@ -21,7 +21,7 @@ export default (models: any, client?: any) => {
 
                 //Recursion blocker, hopefully stops some of the circular references
                 if(!parent || rawType(parent.type) != raw){
-                    console.log(rawType(parent.type), raw)
+                    if(parent != null) console.log(rawType(parent.type), raw)
                     return `
                         ${x.name} {
                             ${getFields(model, type)}
