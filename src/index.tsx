@@ -84,7 +84,7 @@ export class WorkhubClient {
 
     private hubUrl: string;
     private client?: ApolloClient<NormalizedCacheObject>;
-    private models?: Array<any> = [];
+    public models?: Array<any> = [];
 
     public actions : any=  {};
 
