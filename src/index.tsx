@@ -84,9 +84,9 @@ export class WorkhubClient {
 
     private hubUrl: string;
     private client?: ApolloClient<NormalizedCacheObject>;
-    private models?: Array<any> = [];
+    public models?: Array<any> = [];
 
-    public actions : any=  {};
+    public actions : any = {};
 
     constructor(url?: string, setup_fn?: Function) {
         this.hubUrl = url || 'http://localhost:4002';      
