@@ -30,11 +30,11 @@ export const useHubHook = (url : string) : [WorkhubClient | null, Boolean, Error
                         })
                     }
                 }else{
-                    let cli = new WorkhubClient(url, () => {
+                    let cli = new WorkhubClient(url);
+                    cli.setup().then(() => {
                         window.hubClient = cli;
                         setClient(cli as WorkhubClient)
                         setReady(true)
-                        console.log(cli)
                     });
                 }
                 setError(null);

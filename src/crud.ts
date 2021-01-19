@@ -25,6 +25,8 @@ export default (models: any, client?: any) => {
     }
 
     models.forEach((model: any) => {
+        console.log("Setting up actions for model")
+        
         actions[`add${model.name}`] = (item: any) => {
             return client!.mutate({
                 mutation: gql`
