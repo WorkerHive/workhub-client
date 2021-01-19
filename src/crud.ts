@@ -4,9 +4,9 @@ import { isNativeType, rawType } from './utils';
 
 export default (models: any, client?: any) => {
     let actions: any = {};
-    console.log("CRUD Called")
+
     //Takes a type model and iterates over available keys, if key isn't native getFields will be called again to fill out the query fields
-    const getFields = (type : any) => {
+    const getFields = (type : any, parent?: any) => {
         console.log("Get fields for ", type)
         return type.def.map((x: any) => {
             let raw = rawType(x.type);
@@ -15,11 +15,16 @@ export default (models: any, client?: any) => {
                 return x.name                
             }else{
                 console.log("Mapping another type fields", raw, models, x.type);
-                return `
-                    ${x.name} {
-                        ${getFields(models.filter((a : any) => a.name == raw)[0])}
-                    }
-                `
+                let model = models.filter((a: any) => a.name == raw)[0];
+
+                //Recursion blocker, hopefully stops some of the circular references
+                if(!parent || parent.type != x.type){
+                    return `
+                        ${x.name} {
+                            ${getFields(model, type)}
+                        }
+                    `
+                }
             }
         }).join(`\n`)
     }
