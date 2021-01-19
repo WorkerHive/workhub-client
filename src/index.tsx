@@ -22,11 +22,13 @@ export const useHubHook = (url : string) : [WorkhubClient | null, Boolean, Error
             try{
                 if(window.hubClient){
                     console.log("Existing hub client", window.hubClient)
-                    window.hubClient.setup().then(() => {
-                        //Maybe check time since last update?
-                        setClient(window.hubClient as WorkhubClient)
-                        setReady(true)
-                    })
+                    if(!window.hubClient.lastUpdate || window.hubClient.lastUpdate?.getTime() < new Date().getTime() - 15 * 60 * 1000){
+                        window.hubClient.setup().then(() => {
+                            //Maybe check time since last update?
+                            setClient(window.hubClient as WorkhubClient)
+                            setReady(true)
+                        })
+                    }
                 }else{
                     let cli = new WorkhubClient(url, () => {
                         window.hubClient = cli;
@@ -78,6 +80,8 @@ export const WorkhubProvider : FC<ProviderProps> = ({children, args, url}) => {
 }
 
 export class WorkhubClient {
+    public lastUpdate: Date | null = null;
+
     private hubUrl: string;
     private client?: ApolloClient<NormalizedCacheObject>;
     private models?: Array<any> = [];
@@ -116,6 +120,7 @@ export class WorkhubClient {
     }
 
     async getModels(){
+        this.lastUpdate = new Date();
         let result = await this.client!.query({
             query: gql`
                 query GetTypes { 

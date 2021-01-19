@@ -4,7 +4,7 @@ import { isNativeType, rawType } from './utils';
 
 export default (models: any, client?: any) => {
     let actions: any = {};
-
+    console.log("CRUD Called")
     //Takes a type model and iterates over available keys, if key isn't native getFields will be called again to fill out the query fields
     const getFields = (type : any) => {
         console.log("Get fields for ", type)
