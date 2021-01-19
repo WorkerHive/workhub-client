@@ -18,7 +18,8 @@ export default (models: any, client?: any) => {
                 let model = models.filter((a: any) => a.name == raw)[0];
 
                 //Recursion blocker, hopefully stops some of the circular references
-                if(!parent || parent.type != x.type){
+                if(!parent || rawType(parent.type) != raw){
+                    console.log(rawType(parent.type), raw)
                     return `
                         ${x.name} {
                             ${getFields(model, type)}
