@@ -12,12 +12,14 @@ export default (models: any, client?: any) => {
             let raw = rawType(x.type);
 
             if(isNativeType(raw)){
+                console.log("native type")
                 return x.name                
             }else{
+                let fields = getFields(models.filter((a: any) => a.name == raw)[0])
                 console.log("Mapping another type fields", raw, models, x.type);
                 return `
                     ${x.name} {
-                        ${getFields(models.filter((a : any) => a.name == raw)[0])}
+                        ${fields}
                     }
                 `
             }
@@ -26,13 +28,15 @@ export default (models: any, client?: any) => {
 
     models.forEach((model: any) => {
         console.log("Setting up actions for model")
-        
+
+        const fields = getFields(model);
+
         actions[`add${model.name}`] = (item: any) => {
             return client!.mutate({
                 mutation: gql`
             mutation Add${model.name}($input: ${model.name}Input){
                 add${model.name}(${camelCase(model.name)}: $input){
-                    ${getFields(model)}
+                    ${fields}
                 }
             }
         `,
@@ -60,7 +64,7 @@ export default (models: any, client?: any) => {
                 mutation: gql`
             mutation Update${model.name}($id: ID, $update: ${model.name}Input){
                 update${model.name}(${camelCase(model.name)}: $update, id: $id){
-                    ${getFields(model)}
+                    ${fields}
                 }
             }
             `,
@@ -76,7 +80,7 @@ export default (models: any, client?: any) => {
                 query: gql`
             query Get${model.name}($id: ID){
                 ${camelCase(model.name)}(id: $id) {
-                    ${getFields(model)}
+                    ${fields}
                 }
             }
         `,
@@ -91,7 +95,7 @@ export default (models: any, client?: any) => {
                 query: gql`
             query Get${model.name}s {
                 ${camelCase(model.name)}s {
-                    ${getFields(model)}
+                    ${fields}
                 }
             }
         `
