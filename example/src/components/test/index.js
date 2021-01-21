@@ -1,18 +1,18 @@
 import React from 'react';
 
-import { useHub } from '@workerhive/client'
+import { useHub, store } from '@workerhive/client'
 
 export default function Test(props){
-    const [ hub, isReady, err] = useHub()
-
+    const [ hub, store, isReady, err] = useHub()
+    console.log("STORE", store, store['PageLayout'])
     React.useEffect(() => {
         setTimeout(() => {
             if(isReady){
-                hub.actions.getPageLayout('Contact').then((contacts) => {
-                    console.log(contacts)
-                })
+                console.log("IS READY")
+                hub.actions.addContact({name: "Ross Tester"})
+                hub.actions.getContacts()
             }
-        }, 500)
+        }, 2000)
     }, [])
 
     return (

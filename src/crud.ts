@@ -2,7 +2,7 @@ import { gql } from '@apollo/client';
 import { camelCase } from 'camel-case';
 import { isNativeType, rawType } from './utils';
 
-export default (models: any, client?: any) => {
+export default (models: any, client?: any, dispatch?: any) => {
     let actions: any = {};
 
     //Takes a type model and iterates over available keys, if key isn't native getFields will be called again to fill out the query fields
@@ -28,26 +28,26 @@ export default (models: any, client?: any) => {
 
     }
 
-    models.forEach((model: any) => {
-        console.log("Setting up actions for model")
-
-        const fields = getFields(model);
-
+    const setupAdd = (model : any, fields : any) => {
         actions[`add${model.name}`] = (item: any) => {
             return client!.mutate({
                 mutation: gql`
-            mutation Add${model.name}($input: ${model.name}Input){
-                add${model.name}(${camelCase(model.name)}: $input){
-                    ${fields}
-                }
-            }
-        `,
+                    mutation Add${model.name}($input: ${model.name}Input){
+                        add${model.name}(${camelCase(model.name)}: $input){
+                            ${fields}
+                        }
+                    }
+                `,
                 variables: {
                     input: item
                 }
-            }).then((r: any) => r.data[`add${model.name}`])
+            }).then((r: any) => r.data[`add${model.name}`]).then((data: any) => {
+                dispatch({type: `ADD_${model.name}`, data: data})
+            })
         }
+    }
 
+    const setupDelete = (model: any, fields: any) => {
         actions[`delete${model.name}`] = (id: string) => {
             return client!.mutate({
                 mutation: gql`
@@ -58,10 +58,14 @@ export default (models: any, client?: any) => {
                 variables: {
                     id: id
                 }
-            }).then((r: any): any => r.data[`delete${model.name}`])
+            }).then((r: any): any => r.data[`delete${model.name}`]).then((data: any) => {
+                if(data) dispatch({type: `DELETE_${model.name}`, id: id})
+            })
         }
+    }
 
-        actions[`update${model.name}`] = (id: string, update: any) => {
+    const setupUpdate = (model: any, fields: any) => {
+         actions[`update${model.name}`] = (id: string, update: any) => {
             return client!.mutate({
                 mutation: gql`
             mutation Update${model.name}($id: ID, $update: ${model.name}Input){
@@ -74,9 +78,13 @@ export default (models: any, client?: any) => {
                     id,
                     update
                 }
-            }).then((r: any) => r.data[`update${model.name}`])
+            }).then((r: any) => r.data[`update${model.name}`]).then((data: any) => {
+                dispatch({type: `UPDATE_${model.name}`, id: id, data: data})
+            })
         }
+    }
 
+    const setupRead = (model: any, fields: any) => {
         actions[`get${model.name}`] = (id: any) => {
             return client!.query({
                 query: gql`
@@ -89,20 +97,38 @@ export default (models: any, client?: any) => {
                 variables: {
                     id: id
                 }
-            }).then((r: any) => r.data[`${camelCase(model.name)}`])
+            }).then((r: any) => r.data[`${camelCase(model.name)}`]).then((data: any) => {
+                dispatch({type: `GET_${model.name}`, id: id, data: data})
+            })
         }
+    }
 
+    const setupReadAll = (model: any, fields: any) => {
         actions[`get${model.name}s`] = () => {
             return client!.query({
                 query: gql`
-            query Get${model.name}s {
-                ${camelCase(model.name)}s {
-                    ${fields}
+                query Get${model.name}s {
+                    ${camelCase(model.name)}s {
+                        ${fields}
+                    }
                 }
-            }
-        `
-            }).then((r: any) => r.data[`${camelCase(model.name)}s`])
+            `
+            }).then((r: any) => r.data[`${camelCase(model.name)}s`]).then((data : any) => {
+                dispatch({type: `GETS_${model.name}`, data: data})
+            })
         }
+    }
+
+    models.forEach((model: any) => {
+        console.log("Setting up actions for model")
+
+        const fields = getFields(model);
+
+        setupAdd(model, fields)
+        setupDelete(model, fields)        
+        setupUpdate(model, fields)
+        setupReadAll(model, fields)
+        setupRead(model, fields)
     })
     return actions;
 

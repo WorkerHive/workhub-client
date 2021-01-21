@@ -1,8 +1,9 @@
-import React, { useContext, useEffect } from 'react';
+import React, { useContext, useEffect, useReducer } from 'react';
 import { ApolloClient, gql, InMemoryCache, NormalizedCacheObject } from "@apollo/client";
 import { createUploadLink } from 'apollo-upload-client'
 import { camelCase } from 'camel-case';
 import { createContext, FC } from "react";
+import { clientReducer } from './store';
 import CRUD from './crud';
 import {YJS} from './yjs';
 
@@ -11,11 +12,15 @@ export {
 }
 
 
-export const useHubHook = (url : string) : [WorkhubClient | null, Boolean, Error | null] => {
+
+export const useHubHook = (url : string) : [WorkhubClient | null, any, Boolean, Error | null] => {
     const [ client, setClient ]  =  React.useState<any>(null);
     const [ isReady, setReady ] = React.useState<boolean>(false);
     const [ error, setError ] = React.useState<Error | null>(null);
-    
+
+    const [{store}, dispatch] = React.useReducer(clientReducer, {store: {}})
+
+
     useEffect(() => {
         async function startClient(url : string){
             console.log("Start client")
@@ -23,7 +28,7 @@ export const useHubHook = (url : string) : [WorkhubClient | null, Boolean, Error
                 if(window.hubClient){
                     console.log("Existing hub client", window.hubClient)
                     if(!window.hubClient.lastUpdate || window.hubClient.lastUpdate?.getTime() < new Date().getTime() - 15 * 60 * 1000){
-                        window.hubClient.setup().then(() => {
+                        window.hubClient.setup(dispatch).then(() => {
                             //Maybe check time since last update?
                             setClient(window.hubClient as WorkhubClient)
                             setReady(true)
@@ -31,7 +36,7 @@ export const useHubHook = (url : string) : [WorkhubClient | null, Boolean, Error
                     }
                 }else{
                     let cli = new WorkhubClient(url);
-                    cli.setup().then(() => {
+                    cli.setup(dispatch).then(() => {
                         window.hubClient = cli;
                         setClient(cli as WorkhubClient)
                         setReady(true)
@@ -58,7 +63,7 @@ export const useHubHook = (url : string) : [WorkhubClient | null, Boolean, Error
         }
     }, [url, setClient, setError, setReady])
 
-    return [client, isReady, error];
+    return [client, store, isReady, error];
 }
 
 export interface ProviderProps {
@@ -75,8 +80,8 @@ export const useHub = () => {
 }
 
 export const WorkhubProvider : FC<ProviderProps> = ({children, args, url}) => {
-    const [ hub, isReady, err] = useHubHook(url);
-    return (<HubContext.Provider value={[hub, isReady, err]}>{children instanceof Function ? children(hub, isReady, err) : children}</HubContext.Provider>)
+    const [ hub, store, isReady, err] = useHubHook(url);
+    return (<HubContext.Provider value={[hub, store, isReady, err]}>{children instanceof Function ? children(hub, store, isReady, err) : children}</HubContext.Provider>)
 }
 
 export class WorkhubClient {
@@ -87,24 +92,23 @@ export class WorkhubClient {
     public models?: Array<any> = [];
 
     public actions : any = {};
-
-    constructor(url?: string, setup_fn?: Function) {
+    constructor(url?: string, setup_fn?: Function, dispatch?: any) {
         this.hubUrl = url || 'http://localhost:4002';      
         this.initClient()
 
         if(setup_fn){
             this.getModels().then((models) => {
                 this.models = models;
-                this.setupBasicReads();
+                this.setupBasicReads(dispatch);
                 setup_fn();
             })
         }
     }
 
-    async setup(){
+    async setup(dispatch: any){
         let models = await this.getModels();
         this.models = models;
-        this.setupBasicReads();
+        this.setupBasicReads(dispatch);
     }
 
     initClient(){
@@ -135,7 +139,7 @@ export class WorkhubClient {
         return result.data.crudTypes.map((x: any) => ({name: x.name, def: x.def}))
     }
 
-    setupBasicReads(){
-        this.actions = CRUD(this.models, this.client)
+    setupBasicReads(dispatch: any){
+        this.actions = CRUD(this.models, this.client, dispatch)
     }
 }
