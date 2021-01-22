@@ -20,13 +20,14 @@ export function clientReducer(state : State, action : Action): State {
 
     switch(actionParts[0]){
         case 'ADD':
-            store[actionParts[1]].push(action.data)
+            console.log(actionParts, store)
+            store[actionParts[1]] = store[actionParts[1]].concat([action.data])
             return {store: store}
         case 'GET':
             if(ix){
                 store[actionParts[1]][ix] = action.data
             }else{
-                store[actionParts[1]].push(action.data)
+                store[actionParts[1]] = store[actionParts[1]].concat([action.data])
             }
             return store;
         case 'GETS':

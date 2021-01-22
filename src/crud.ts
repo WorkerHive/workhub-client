@@ -43,6 +43,7 @@ export default (models: any, client?: any, dispatch?: any) => {
                 }
             }).then((r: any) => r.data[`add${model.name}`]).then((data: any) => {
                 dispatch({type: `ADD_${model.name}`, data: data})
+                return data;
             })
         }
     }
@@ -60,6 +61,7 @@ export default (models: any, client?: any, dispatch?: any) => {
                 }
             }).then((r: any): any => r.data[`delete${model.name}`]).then((data: any) => {
                 if(data) dispatch({type: `DELETE_${model.name}`, id: id})
+                return data;
             })
         }
     }
@@ -80,6 +82,7 @@ export default (models: any, client?: any, dispatch?: any) => {
                 }
             }).then((r: any) => r.data[`update${model.name}`]).then((data: any) => {
                 dispatch({type: `UPDATE_${model.name}`, id: id, data: data})
+                return data;
             })
         }
     }
@@ -99,6 +102,7 @@ export default (models: any, client?: any, dispatch?: any) => {
                 }
             }).then((r: any) => r.data[`${camelCase(model.name)}`]).then((data: any) => {
                 dispatch({type: `GET_${model.name}`, id: id, data: data})
+                return data;
             })
         }
     }
@@ -115,6 +119,7 @@ export default (models: any, client?: any, dispatch?: any) => {
             `
             }).then((r: any) => r.data[`${camelCase(model.name)}s`]).then((data : any) => {
                 dispatch({type: `GETS_${model.name}`, data: data})
+                return data;
             })
         }
     }
