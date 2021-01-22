@@ -127,7 +127,7 @@ export class WorkhubClient {
         return {
         headers: {
         ...headers,
-        authorization: token ? `Bearer ${token}` : "",
+        Authorization: token ? `Bearer ${token}` : "",
         }
        }
     });

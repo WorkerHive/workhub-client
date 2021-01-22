@@ -29,21 +29,28 @@ export function clientReducer(state : State, action : Action): State {
             }else{
                 store[actionParts[1]] = store[actionParts[1]].concat([action.data])
             }
-            return store;
+            return {store: store};
         case 'GETS':
             store[actionParts[1]] = action.data;       
             return {store: store}
         case 'UPDATE':
-            if(ix){
-                store[actionParts[1]][ix] = {
-                    ...store[actionParts[1]][ix],
+            if(ix > -1){
+                let _part = store[actionParts[1]].slice()
+                _part[ix] = {
+                    ..._part[ix],
                     ...action.data
-                }
+                } 
+                console.log("Update", ix, action.data)
+                store[actionParts[1]] = _part;
             }
-            return store;
+            return {store};
         case 'DELETE':
-            if(ix > -1) store[actionParts[1]].splice(ix, 1)
-            return store;
+            if(ix > -1){
+                let part = store[actionParts[1]].slice()
+                part.splice(ix, 1)
+                store[actionParts[1]] = part;
+            }
+            return {store};
     }
     return state;
 }
