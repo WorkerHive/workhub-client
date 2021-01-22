@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useReducer } from 'react';
 import { ApolloClient, gql, InMemoryCache, NormalizedCacheObject } from "@apollo/client";
+import { setContext } from '@apollo/client/link/context';
 import { createUploadLink } from 'apollo-upload-client'
 import { camelCase } from 'camel-case';
 import { createContext, FC } from "react";
@@ -119,15 +120,24 @@ export class WorkhubClient {
         this.setupBasicReads(dispatch);
     }
 
+    private authLink = setContext((_, { headers }) => {
+    // get the authentication token from local storage if it exists
+        const token = localStorage.getItem('token');
+    // return the headers to the context so httpLink can read them
+        return {
+        headers: {
+        ...headers,
+        authorization: token ? `Bearer ${token}` : "",
+        }
+       }
+    });
+
     initClient(){
         console.debug('=> Setup client', this.hubUrl)
         this.client = new ApolloClient({
-            link: createUploadLink({
+            link: this.authLink.concat(createUploadLink({
                 uri: `${this.hubUrl}/graphql`
-            }),
-            headers: {
-                'Authorization': 'Bearer ' + this.accessToken
-            },
+            })),
             cache: new InMemoryCache({
                 addTypename: false
             })
