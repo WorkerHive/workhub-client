@@ -13,7 +13,7 @@ export {
 
 
 
-export const useHubHook = (url : string) : [WorkhubClient | null, any, Boolean, Error | null] => {
+export const useHubHook = (url : string, token: string) : [WorkhubClient | null, any, Boolean, Error | null] => {
     const [ client, setClient ]  =  React.useState<any>(null);
     const [ isReady, setReady ] = React.useState<boolean>(false);
     const [ error, setError ] = React.useState<Error | null>(null);
@@ -22,11 +22,12 @@ export const useHubHook = (url : string) : [WorkhubClient | null, any, Boolean, 
 
 
     useEffect(() => {
-        async function startClient(url : string){
+        async function startClient(url : string, token: string){
             console.log("Start client")
             try{
                 if(window.hubClient){
                     console.log("Existing hub client", window.hubClient)
+                    window.hubClient.setAccessToken(token)
                     if(!window.hubClient.lastUpdate || window.hubClient.lastUpdate?.getTime() < new Date().getTime() - 15 * 60 * 1000){
                         window.hubClient.setup(dispatch).then(() => {
                             //Maybe check time since last update?
@@ -36,6 +37,7 @@ export const useHubHook = (url : string) : [WorkhubClient | null, any, Boolean, 
                     }
                 }else{
                     let cli = new WorkhubClient(url);
+                    cli.setAccessToken(token)
                     cli.setup(dispatch).then(() => {
                         window.hubClient = cli;
                         setClient(cli as WorkhubClient)
@@ -57,7 +59,7 @@ export const useHubHook = (url : string) : [WorkhubClient | null, any, Boolean, 
             setError(null);
         }
 
-        stopClient().then(() => startClient(url))
+        stopClient().then(() => startClient(url, token))
         return () => {
            //stopClient();
         }
@@ -68,7 +70,7 @@ export const useHubHook = (url : string) : [WorkhubClient | null, any, Boolean, 
 
 export interface ProviderProps {
     children: any;
-    args?: any;
+    token?: string;
     url: string;
 }
 
@@ -79,8 +81,8 @@ export const useHub = () => {
     return context
 }
 
-export const WorkhubProvider : FC<ProviderProps> = ({children, args, url}) => {
-    const [ hub, store, isReady, err] = useHubHook(url);
+export const WorkhubProvider : FC<ProviderProps> = ({children, token, url}) => {
+    const [ hub, store, isReady, err] = useHubHook(url, token || '');
     return (<HubContext.Provider value={[hub, store, isReady, err]}>{children instanceof Function ? children(hub, store, isReady, err) : children}</HubContext.Provider>)
 }
 
@@ -90,6 +92,8 @@ export class WorkhubClient {
     private hubUrl: string;
     private client?: ApolloClient<NormalizedCacheObject>;
     public models?: Array<any> = [];
+
+    private accessToken?: string;
 
     public actions : any = {};
     constructor(url?: string, setup_fn?: Function, dispatch?: any) {
@@ -105,6 +109,10 @@ export class WorkhubClient {
         }
     }
 
+    setAccessToken(token: string){
+        this.accessToken = token
+    }
+
     async setup(dispatch: any){
         let models = await this.getModels();
         this.models = models;
@@ -117,6 +125,9 @@ export class WorkhubClient {
             link: createUploadLink({
                 uri: `${this.hubUrl}/graphql`
             }),
+            headers: {
+                'Authorization': 'Bearer ' + this.accessToken
+            },
             cache: new InMemoryCache({
                 addTypename: false
             })
