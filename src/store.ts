@@ -24,7 +24,7 @@ export function clientReducer(state : State, action : Action): State {
             store[actionParts[1]] = store[actionParts[1]].concat([action.data])
             return {store: store}
         case 'GET':
-            if(ix){
+            if(ix > -1){
                 store[actionParts[1]][ix] = action.data
             }else{
                 store[actionParts[1]] = store[actionParts[1]].concat([action.data])
