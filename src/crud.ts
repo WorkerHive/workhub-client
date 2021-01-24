@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import gql  from 'graphql-tag';
 import { camelCase } from 'camel-case';
 import { isNativeType, rawType } from './utils';
 

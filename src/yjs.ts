@@ -1,12 +1,17 @@
 import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
 
-export const YJS = () => {
-    let ydoc = new Y.Doc();
+export class RealtimeSync {
+    private doc = new Y.Doc();
 
-    let websocketProvider = new WebsocketProvider(`wss://thetechcompany.workhub.services/yjs`, 'workhub', ydoc)
+    private websocketProvider = new WebsocketProvider(`wss://thetechcompany.workhub.services/yjs`, 'workhub', this.doc)
 
-    websocketProvider.on('status', (e : any) => {
-        console.log(e)
-    })
+    public status: string = '';
+
+    constructor(){
+        this.websocketProvider.on('status', (e : any) => {
+            console.log(e)
+            this.status = e;
+        })
+    }
 }

@@ -1,98 +1,62 @@
-import React, { useContext, useEffect, useReducer } from 'react';
-import { ApolloClient, gql, InMemoryCache, NormalizedCacheObject } from "@apollo/client";
-import { setContext } from '@apollo/client/link/context';
+import { setContext } from 'apollo-link-context'
+import { createHttpLink } from 'apollo-link-http'
+import fetch from 'node-fetch'
+import {InMemoryCache} from 'apollo-cache-inmemory'
 import { createUploadLink } from 'apollo-upload-client'
 import { camelCase } from 'camel-case';
 import { createContext, FC } from "react";
 import { clientReducer } from './store';
 import CRUD from './crud';
-import {YJS} from './yjs';
+import {WorkhubFS} from '@workerhive/ipfs'
+import {RealtimeSync } from './yjs';
+
+const ENVIRONMENT = (typeof process !== 'undefined') && (process.release.name === 'node') ? 'NODE' : 'BROWSER'
+let Apollo, gql : any;
+let BoostClient : any;
+let ReactClient : any;
+
+
+const getClient = async () => {
+    if(ENVIRONMENT == "NODE"){
+        Apollo = await import('apollo-boost');
+        BoostClient = Apollo.ApolloClient
+        gql = Apollo.gql
+    }else{
+        Apollo = await import('@apollo/client')
+        ReactClient = Apollo.ApolloClient
+        gql = Apollo.gql
+    }
+}
+
+
+/*
+if(ENVIRONMENT == "NODE"){
+    const { ApolloClient, gql } = await import("apollo-boost")
+}else{
+    const { ApolloClient, gql, InMemoryCache } = await import("@apollo/client");
+    const { setContext } = await import('@apollo/client/link/context');
+}
+*/
+
+
+getClient();
+
 
 export { 
-    YJS
+    RealtimeSync
 }
 
-
-
-export const useHubHook = (url : string, token: string) : [WorkhubClient | null, any, Boolean, Error | null] => {
-    const [ client, setClient ]  =  React.useState<any>(null);
-    const [ isReady, setReady ] = React.useState<boolean>(false);
-    const [ error, setError ] = React.useState<Error | null>(null);
-
-    const [{store}, dispatch] = React.useReducer(clientReducer, {store: {}})
-
-
-    useEffect(() => {
-        async function startClient(url : string, token: string){
-            console.log("Start client")
-            try{
-                if(window.hubClient){
-                    console.log("Existing hub client", window.hubClient)
-                    window.hubClient.setAccessToken(token)
-                    if(!window.hubClient.lastUpdate || window.hubClient.lastUpdate?.getTime() < new Date().getTime() - 15 * 60 * 1000){
-                        window.hubClient.setup(dispatch).then(() => {
-                            //Maybe check time since last update?
-                            setClient(window.hubClient as WorkhubClient)
-                            setReady(true)
-                        })
-                    }
-                }else{
-                    let cli = new WorkhubClient(url);
-                    cli.setAccessToken(token)
-                    cli.setup(dispatch).then(() => {
-                        window.hubClient = cli;
-                        setClient(cli as WorkhubClient)
-                        setReady(true)
-                    });
-                }
-                setError(null);
-            }catch(e){
-                console.error("Error setting up client", e)
-                setClient(null);
-                setReady(false)
-                setError(e)
-            }
-        }
-        async function stopClient(){
-            console.log("Stop client")
-            setClient(null);
-            setReady(false)
-            setError(null);
-        }
-
-        stopClient().then(() => startClient(url, token))
-        return () => {
-           //stopClient();
-        }
-    }, [url, setClient, setError, setReady])
-
-    return [client, store, isReady, error];
-}
-
-export interface ProviderProps {
-    children: any;
-    token?: string;
-    url: string;
-}
-
-import { HubContext } from './context';
-
-export const useHub = () => {
-    const context = useContext(HubContext)
-    return context
-}
-
-export const WorkhubProvider : FC<ProviderProps> = ({children, token, url}) => {
-    const [ hub, store, isReady, err] = useHubHook(url, token || '');
-    return (<HubContext.Provider value={[hub, store, isReady, err]}>{children instanceof Function ? children(hub, store, isReady, err) : children}</HubContext.Provider>)
-}
 
 export class WorkhubClient {
     public lastUpdate: Date | null = null;
 
     private hubUrl: string;
-    private client?: ApolloClient<NormalizedCacheObject>;
+    private client?: any;
     public models?: Array<any> = [];
+
+    private realtimeSync: RealtimeSync;
+
+    private fsLayer: WorkhubFS;
 
     private accessToken?: string;
 
@@ -100,6 +64,9 @@ export class WorkhubClient {
     constructor(url?: string, setup_fn?: Function, dispatch?: any) {
         this.hubUrl = url || 'http://localhost:4002';      
         this.initClient()
+
+        this.realtimeSync = new RealtimeSync();
+        this.fsLayer = new WorkhubFS({})
 
         if(setup_fn){
             this.getModels().then((models) => {
@@ -133,15 +100,31 @@ export class WorkhubClient {
     });
 
     initClient(){
+        let opts : any= {};
         console.debug('=> Setup client', this.hubUrl)
-        this.client = new ApolloClient({
-            link: this.authLink.concat(createUploadLink({
-                uri: `${this.hubUrl}/graphql`
-            })),
-            cache: new InMemoryCache({
-                addTypename: false
-            })
+        opts.cache = new InMemoryCache({
+            addTypename: false
         })
+
+        if(ENVIRONMENT == "NODE"){
+            opts.link = createHttpLink({
+                uri: `${this.hubUrl}/graphql`,
+                headers: {
+                    Authorization: this.accessToken ? `Bearer ${this.accessToken}` : "",
+                }
+            })
+            this.client = new BoostClient(opts)
+        }else{
+            opts.link = createUploadLink({
+                uri: `${this.hubUrl}/graphql`,
+                headers: {
+                    Authorization: this.accessToken ? `Bearer ${this.accessToken}` : "",
+                }
+            })
+            this.client = new ReactClient(opts)
+
+        }
+
     }
 
     authenticate(username: string, password: string){
@@ -155,7 +138,7 @@ export class WorkhubClient {
                 username: username,
                 password: password
             })
-        }).then((r) => r.json())
+        }).then((r :any) => r.json())
     }
 
     async query(query : string, variables : object = {}){
