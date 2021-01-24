@@ -144,6 +144,22 @@ export class WorkhubClient {
         })
     }
 
+    async query(query : string, variables : object = {}){
+        let result = await this.client!.query({
+            query: gql`${query}`,
+            variables: variables
+        })
+        return result;
+    }
+    
+    async mutation(query: string, variables: object = {}){
+        let result = await this.client!.mutate({
+            mutation: gql`${query}`,
+            variables: variables
+        })
+        return result;
+    }
+
     async getModels(){
         this.lastUpdate = new Date();
         let result = await this.client!.query({
