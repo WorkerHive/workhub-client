@@ -144,6 +144,20 @@ export class WorkhubClient {
         })
     }
 
+    authenticate(username: string, password: string){
+        return fetch(`${this.hubUrl}/login`, {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                strategy: 'jwt',
+                username: username,
+                password: password
+            })
+        }).then((r) => r.json())
+    }
+
     async query(query : string, variables : object = {}){
         let result = await this.client!.query({
             query: gql`${query}`,
