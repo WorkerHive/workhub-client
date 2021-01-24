@@ -192,5 +192,80 @@ export class WorkhubClient {
 
     setupBasicReads(dispatch: any){
         this.actions = CRUD(this.models, this.client, dispatch)
+
+
+        this.actions['getStoreTypes'] = async () => {
+            let result = await this.query(`
+                query GetStoreTypes{
+                    storeTypes {
+                        id
+                        name
+                        description
+                    }
+                }
+            `)
+            return result.data.storeTypes;
+        }
+        this.actions['getStores'] = async () => {
+            let result = await this.query(`
+                query GetStores {
+                    integrationStores{
+                        id
+                        name
+                        host
+                        user
+                        pass
+                        dbName
+                        type
+                    }
+                }
+            `)
+            return result.data.integrationStores;
+        }
+        this.actions['addStore'] = async (store: any) => {
+            let result = await this.mutation(`
+                mutation AddStore($store: IntegrationStoreInput){
+                    addIntegrationStore(integrationStore: $store){
+                        id
+                        name
+                        host
+                        user
+                        pass
+                        dbName
+                        type
+                    }
+                }
+            `, {
+                store: store
+            })
+            return result.data.addIntegrationStore;
+        }
+        this.actions['updateStore'] = async (id: string, store: any) => {
+            let result = await this.mutation(`
+                mutation UpdateStore($id: String, $store: IntegrationStoreInput) {
+                    updateIntegrationStore(id: $id, integrationStore: $store){
+                        id
+                        name
+                        host
+                        user
+                        pass
+                        dbName
+                        type
+                    }
+                }
+            `, {
+                store: store,
+                id: id
+            })
+            return result.data.updateIntegrationStore
+        }
+        this.actions['deleteStore'] = async (id: string) => {
+            let result = await this.mutation(`
+                mutation DeleteStore($id: String){
+                    deleteIntegrationStore(id: $id)
+                }
+            `)
+            return result.data.deleteIntegrationStore;
+        }
     }
 }
