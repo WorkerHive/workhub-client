@@ -204,6 +204,7 @@ export class WorkhubClient {
                     }
                 }
             `)
+            dispatch({type: `GETS_StoreType`, data: result.data.storeTypes})
             return result.data.storeTypes;
         }
         this.actions['getStores'] = async () => {
@@ -220,6 +221,7 @@ export class WorkhubClient {
                     }
                 }
             `)
+            dispatch({type: `GETS_IntegrationStore`, data: result.data.integrationStores})
             return result.data.integrationStores;
         }
         this.actions['addStore'] = async (store: any) => {
@@ -238,6 +240,7 @@ export class WorkhubClient {
             `, {
                 store: store
             })
+            dispatch({type: `ADD_IntegrationStore`, data: result.data.addIntegrationStore})
             return result.data.addIntegrationStore;
         }
         this.actions['updateStore'] = async (id: string, store: any) => {
@@ -257,6 +260,7 @@ export class WorkhubClient {
                 store: store,
                 id: id
             })
+            dispatch({type: `UPDATE_IntegrationStore`, data: result.data.updateIntegrationStore, id: id})
             return result.data.updateIntegrationStore
         }
         this.actions['deleteStore'] = async (id: string) => {
@@ -264,7 +268,10 @@ export class WorkhubClient {
                 mutation DeleteStore($id: String){
                     deleteIntegrationStore(id: $id)
                 }
-            `)
+            `, {
+                id: id
+            })
+            dispatch({type: `DELETE_IntegrationStore`, id: id})
             return result.data.deleteIntegrationStore;
         }
     }
