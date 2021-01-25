@@ -517,10 +517,10 @@
   resolved "https://registry.yarnpkg.com/@ungap/global-this/-/global-this-0.4.3.tgz#44cb668b03e7c4bc88cb6e6f9329d381131878ee"
   integrity sha512-MuHEpDBurNVeD6mV9xBcAN2wfTwuaFQhHuhWkJuXmyVJ5P5sBCw+nnFpdfb0tAvgWkfefWCsAoAsh7MTUr3LPg==
 
-"@workerhive/ipfs@^1.0.2":
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/@workerhive/ipfs/-/ipfs-1.0.2.tgz#032c6340ea33863cb7e5de6ea83c4e183ea507b3"
-  integrity sha512-ZhCKRnUiTUB8q4rWkAl6CeJhx8e87d/tRT3paN7nmNq4J4HCYQZ6Zw1ALezLH9iwWALYXi3FuBQqVpfwqBgGwA==
+"@workerhive/ipfs@^1.0.3":
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/@workerhive/ipfs/-/ipfs-1.0.3.tgz#a1f3c9fc99a8c823520ce73b6e9878b8344b30f5"
+  integrity sha512-e+do3fhYOCdxoFm7/X3LMJAx34vWA6Jdk0NruGdwMoCIkeRaTxsiOdqw8ti9eBFGu1jzhvxKhW8Wooz840StTw==
   dependencies:
     ipfs "^0.52.3"
     uint8-to-base64 "^0.2.0"
