@@ -224,6 +224,24 @@ export class WorkhubClient {
     setupBasicReads(dispatch: any){
         this.actions = CRUD(this.models, this.client, dispatch)
 
+        this.actions['updateType'] = async (name : string, fields : any) => {
+            let result = await this.mutation(`
+                mutation UpdateType($name: String, $fields: JSON){
+                    updateMutableType(name: $name, fields: $fields){
+                        name
+                        def
+                    }
+                }
+            `, {
+                name,
+                fields
+            })
+            let model_ix = this.models!.map((x) => x.name).indexOf(name)
+            if(model_ix > -1){
+                this.models![model_ix] = result.data.updateMutableType;
+            }
+            return result.data.updateMutableType
+        }
 
         this.actions['getStoreTypes'] = async () => {
             let result = await this.query(`

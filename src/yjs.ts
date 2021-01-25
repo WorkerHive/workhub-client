@@ -62,7 +62,8 @@ export class RealtimeArray {
     toArray(){
         return this.array.toArray().map((x) => {
             Object.keys(x).map((key) => {
-                if(this.model.defs.filter((a : any) => a.name == key)[0].type == "Date"){
+              console.log(this.model)
+                if(this.model && this.model.defs && this.model.defs.filter((a : any) => a.name == key)[0].type == "Date"){
                     x[key] = new Date(x[key])
                 }
             })
