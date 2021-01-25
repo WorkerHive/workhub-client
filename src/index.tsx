@@ -1,6 +1,6 @@
 import { setContext } from 'apollo-link-context'
 import { createHttpLink } from 'apollo-link-http'
-import fetch from 'node-fetch'
+import fetch from 'cross-fetch'
 import {InMemoryCache} from 'apollo-cache-inmemory'
 import { createUploadLink } from 'apollo-upload-client'
 import { camelCase } from 'camel-case';
@@ -9,8 +9,9 @@ import { clientReducer } from './store';
 import CRUD from './crud';
 import {WorkhubFS} from '@workerhive/ipfs'
 import {RealtimeSync } from './yjs';
+import jwt_decode from 'jwt-decode'
 
-const ENVIRONMENT = (typeof process !== 'undefined') && (process.release.name === 'node') ? 'NODE' : 'BROWSER'
+const ENVIRONMENT = (typeof process !== 'undefined') && (process.release && process.release.name === 'node') ? 'NODE' : 'BROWSER'
 let Apollo, gql : any;
 let BoostClient : any;
 let ReactClient : any;
@@ -39,7 +40,6 @@ if(ENVIRONMENT == "NODE"){
 */
 
 
-getClient();
 
 
 export { 
@@ -51,22 +51,39 @@ export class WorkhubClient {
     public lastUpdate: Date | null = null;
 
     private hubUrl: string;
+    private hostURL: URL;
+    private hostName: string;
+
     private client?: any;
     public models?: Array<any> = [];
 
-    private realtimeSync: RealtimeSync;
+    private platform: string = ENVIRONMENT
+    
+    public realtimeSync?: RealtimeSync;
 
-    private fsLayer: WorkhubFS;
+    private fsLayer?: WorkhubFS;
 
     private accessToken?: string;
+    private swarmKey?: string;
 
     public actions : any = {};
     constructor(url?: string, setup_fn?: Function, dispatch?: any) {
         this.hubUrl = url || 'http://localhost:4002';      
-        this.initClient()
+        this.hostURL = new URL(this.hubUrl)
+        this.hostName = this.hostURL.hostname;
+      //  this.initClient()
 
-        this.realtimeSync = new RealtimeSync();
-        this.fsLayer = new WorkhubFS({})
+        if(ENVIRONMENT != "NODE"){
+            console.info("Turning realtime on")
+            this.realtimeSync = new RealtimeSync(this.hostName == 'localhost' ? 'thetechcompany.workhub.services' : this.hostName);
+        }
+        
+        /*this.fsLayer = new WorkhubFS({
+            Swarm: [
+                `/dns4/${(this.hostName.hostname == "localhost" ? 'thetechcompany.workhub.services' : this.hostName.hostname)}/tcp/443/wss/p2p-webrtc-star`
+            ]
+        }, 'L2tleS9zd2FybS9wc2svMS4wLjAvCi9iYXNlMTYvCjVmYmNhYzhjMzliZDhlZTFlMmQzNzU4OGEwZjgyMTk1ZGQxMjU4MDI1Yzk3N2JiNWRkYzdlNjgyNjdjNjVjYjM=')
+        */
 
         if(setup_fn){
             this.getModels().then((models) => {
@@ -77,11 +94,28 @@ export class WorkhubClient {
         }
     }
 
+    get user(){
+        return jwt_decode(this.accessToken!)
+    }
+
     setAccessToken(token: string){
         this.accessToken = token
     }
 
+    async setSwarmKey(key: string){
+        this.swarmKey = key;
+        if(this.fsLayer) await this.fsLayer.stop();
+        this.fsLayer = new WorkhubFS({
+            Swarm: [
+                `/dns4/${(this.hostName == "localhost" ? 'thetechcompany.workhub.services' : this.hostName)}/tcp/443/wss/p2p-webrtc-star`
+            ]
+        }, this.swarmKey)
+    }
+
     async setup(dispatch: any){
+        await this.initClient()
+        const swarmKey = await this.getSwarmKey();
+        await this.setSwarmKey(swarmKey)
         let models = await this.getModels();
         this.models = models;
         this.setupBasicReads(dispatch);
@@ -99,31 +133,34 @@ export class WorkhubClient {
        }
     });
 
-    initClient(){
-        let opts : any= {};
-        console.debug('=> Setup client', this.hubUrl)
-        opts.cache = new InMemoryCache({
-            addTypename: false
-        })
-
-        if(ENVIRONMENT == "NODE"){
-            opts.link = createHttpLink({
-                uri: `${this.hubUrl}/graphql`,
-                headers: {
-                    Authorization: this.accessToken ? `Bearer ${this.accessToken}` : "",
-                }
+    async initClient(){
+        
+        await getClient()
+            let opts : any= {};
+            console.debug('=> Setup client', this.hubUrl)
+            opts.cache = new InMemoryCache({
+                addTypename: false
             })
-            this.client = new BoostClient(opts)
-        }else{
-            opts.link = createUploadLink({
-                uri: `${this.hubUrl}/graphql`,
-                headers: {
-                    Authorization: this.accessToken ? `Bearer ${this.accessToken}` : "",
-                }
-            })
-            this.client = new ReactClient(opts)
 
-        }
+            if(ENVIRONMENT == "NODE"){
+                opts.link = createHttpLink({
+                    uri: `${this.hubUrl}/graphql`,
+                    fetch: fetch,
+                    headers: {
+                        Authorization: this.accessToken ? `Bearer ${this.accessToken}` : "",
+                    }
+                })
+                this.client = new BoostClient(opts)
+            }else{
+                opts.link = createUploadLink({
+                    uri: `${this.hubUrl}/graphql`,
+                    headers: {
+                        Authorization: this.accessToken ? `Bearer ${this.accessToken}` : "",
+                    }
+                })
+                this.client = new ReactClient(opts)
+            }
+        
 
     }
 
@@ -155,6 +192,17 @@ export class WorkhubClient {
             variables: variables
         })
         return result;
+    }
+
+    async getSwarmKey(){
+        let result = await this.client!.query({
+            query: gql`
+                query GetSwarmKey{
+                    swarmKey 
+                }
+            `
+        })
+        return result.data.swarmKey;
     }
 
     async getModels(){

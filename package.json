@@ -1,6 +1,6 @@
 {
   "name": "@workerhive/client",
-  "version": "0.0.32",
+  "version": "0.1.0",
   "main": "dist/index.js",
   "files": [
     "dist"
@@ -8,14 +8,17 @@
   "license": "MIT",
   "dependencies": {
     "@apollo/client": "^3.3.6",
-    "@workerhive/ipfs": "^1.0.1",
+    "@workerhive/ipfs": "^1.0.2",
     "apollo-boost": "^0.4.9",
     "apollo-link-context": "^1.0.20",
     "apollo-link-http": "^1.5.17",
     "apollo-upload-client": "^14.1.3",
     "camel-case": "^4.1.2",
+    "cross-fetch": "^3.0.6",
     "graphql": "^15.4.0",
+    "jwt-decode": "^3.1.2",
     "node-fetch": "^2.6.1",
+    "websocket-polyfill": "^0.0.3",
     "y-websocket": "^1.3.9",
     "yjs": "^13.4.12"
   },

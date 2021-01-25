@@ -22,7 +22,7 @@ export const WorkhubProvider = ({children, token, url} : ProviderProps) => {
 }
 
 export const useHubHook = (url : string, token: string) : [WorkhubClient | null, any, Boolean, Error | null] => {
-    const [ client, setClient ]  =  React.useState<any>(null);
+    const [ client, setClient ] = React.useState<any>(null);
     const [ isReady, setReady ] = React.useState<boolean>(false);
     const [ error, setError ] = React.useState<Error | null>(null);
 
@@ -37,11 +37,13 @@ export const useHubHook = (url : string, token: string) : [WorkhubClient | null,
                     console.log("Existing hub client", window.hubClient)
                     window.hubClient.setAccessToken(token)
                     if(!window.hubClient.lastUpdate || window.hubClient.lastUpdate?.getTime() < new Date().getTime() - 15 * 60 * 1000){
+
                         window.hubClient.setup(dispatch).then(() => {
                             //Maybe check time since last update?
                             setClient(window.hubClient as WorkhubClient)
                             setReady(true)
                         })
+                    
                     }
                 }else{
                     let cli = new WorkhubClient(url);
