@@ -219,11 +219,27 @@ export class WorkhubClient {
             `
         })
         
+    
         return result.data.crudTypes
     }
 
     setupBasicReads(dispatch: any){
         this.actions = CRUD(this.models, this.client, dispatch)
+
+        
+        this.models!.push({
+            name: 'IntegrationStore',
+            directives: [],
+            def: [
+                {name: 'id', type: 'ID'},
+                {name: 'name', type: 'String'},
+                {name: 'host', type: 'String'},
+                {name: 'user', type: 'String'},
+                {name: 'pass', type: 'Password'},
+                {name: 'dbName', type: 'String'},
+                {name: 'type', type: 'StoreType'}
+            ]
+        })
 
         this.actions['updateType'] = async (name : string, fields : any) => {
             let result = await this.mutation(`
@@ -270,7 +286,7 @@ export class WorkhubClient {
             return result.data.storeLayout;
         }
 
-        this.actions['getStores'] = async () => {
+        this.actions['getIntegrationStores'] = async () => {
             let result = await this.query(`
                 query GetStores {
                     integrationStores{
