@@ -241,6 +241,50 @@ export class WorkhubClient {
             ]
         })
 
+        this.actions['addRole'] = async (name: string, permissions: any) => {
+            let result = await this.mutation(`
+                mutation AddRole ($name: String, $perms: JSON){
+                    addRole(name: $name, permissions: $perms){
+                        id
+                        name
+                        permissions
+                    }
+                    
+                }
+            `, {
+                name,
+                perms: permissions
+            })
+            return result.data.addRole;
+        }
+
+        this.actions['updateRole'] = async (id: string, permissions: any) => {
+            let result = await this.mutation(`
+                mutation UpdateRole($id: String, $perms: JSON) {
+                    updateRole(id: $id, permissions: $perms){
+                        id
+                        name
+                        permissions
+                    }
+                }
+            `, {
+                id,
+                perms: permissions
+            })
+            return result.data.updateRole;
+        }
+
+        this.actions['deleteRole'] = async (id: string) => {
+            let result = await this.mutation(`
+                mutation RemoveRole($id: String){
+                    deleteRole(id: $id)
+                }
+            `, {
+                id
+            })
+            return result.data.deleteRole
+        }
+
         this.actions['updateType'] = async (name : string, fields : any) => {
             let result = await this.mutation(`
                 mutation UpdateType($name: String, $fields: JSON){
