@@ -212,13 +212,14 @@ export class WorkhubClient {
                 query GetTypes { 
                     crudTypes { 
                         name
+                        directives
                         def
                     }
                 }
             `
         })
         
-        return result.data.crudTypes.map((x: any) => ({name: x.name, def: x.def}))
+        return result.data.crudTypes
     }
 
     setupBasicReads(dispatch: any){
@@ -229,6 +230,7 @@ export class WorkhubClient {
                 mutation UpdateType($name: String, $fields: JSON){
                     updateMutableType(name: $name, fields: $fields){
                         name
+                        directives
                         def
                     }
                 }
@@ -256,6 +258,18 @@ export class WorkhubClient {
             dispatch({type: `GETS_StoreType`, data: result.data.storeTypes})
             return result.data.storeTypes;
         }
+
+        this.actions['getStoreLayout'] = async (storeName: string) => {
+            let result = await this.query(`
+                query GetStoreLayout ($name: String){
+                    storeLayout(storeName: $name)
+                }
+            `, {
+                name: storeName
+            })
+            return result.data.storeLayout;
+        }
+
         this.actions['getStores'] = async () => {
             let result = await this.query(`
                 query GetStores {
