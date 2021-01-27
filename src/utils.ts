@@ -1,6 +1,6 @@
 import { type } from "os";
 
-const nativeTypes = [ "Int", "String", "Boolean", "Float", "ID", "JSON", "Date", "Hash"];
+const nativeTypes = [ "Int", "String", "Boolean", "Float", "ID", "JSON", "Date", "Hash", "Upload"];
 export const isNativeType = (typeName : string) => {
     return nativeTypes.indexOf(typeName) > -1;
 }

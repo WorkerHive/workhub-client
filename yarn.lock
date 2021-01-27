@@ -517,7 +517,7 @@
   resolved "https://registry.yarnpkg.com/@ungap/global-this/-/global-this-0.4.3.tgz#44cb668b03e7c4bc88cb6e6f9329d381131878ee"
   integrity sha512-MuHEpDBurNVeD6mV9xBcAN2wfTwuaFQhHuhWkJuXmyVJ5P5sBCw+nnFpdfb0tAvgWkfefWCsAoAsh7MTUr3LPg==
 
-"@workerhive/ipfs@1.0.4":
+"@workerhive/ipfs@^1.0.4":
   version "1.0.4"
   resolved "https://registry.yarnpkg.com/@workerhive/ipfs/-/ipfs-1.0.4.tgz#e3850bc151f0c0efddbe9afac105c09d023a1f50"
   integrity sha512-j4kbZ6kLeE6PdATED8/vkBQkUw06XRYwr8QzD87Hh2l8waY0tarbLTOxgIx03K+GuQzsFb8vi0RmWXntfbtXQw==

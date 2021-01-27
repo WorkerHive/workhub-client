@@ -7,6 +7,7 @@ import { camelCase } from 'camel-case';
 import { createContext, FC } from "react";
 import { clientReducer } from './store';
 import CRUD from './crud';
+import UPLOAD from './upload';
 import {WorkhubFS} from '@workerhive/ipfs'
 import {RealtimeSync } from './yjs';
 import jwt_decode from 'jwt-decode'
@@ -55,7 +56,9 @@ export class WorkhubClient {
     private hostName: string;
 
     private client?: any;
+
     public models?: Array<any> = [];
+    public uploadModels?: Array<any> = [];
 
     private platform: string = ENVIRONMENT
     
@@ -86,9 +89,12 @@ export class WorkhubClient {
         */
 
         if(setup_fn){
-            this.getModels().then((models) => {
-                this.models = models;
+            this.getModels().then(({crud, upload}) => {
+                this.models = crud;
+                this.uploadModels = upload;
                 this.setupBasicReads(dispatch);
+                this.setupFileActions(dispatch);
+
                 setup_fn();
             })
         }
@@ -116,9 +122,11 @@ export class WorkhubClient {
         await this.initClient()
         const swarmKey = await this.getSwarmKey();
         await this.setSwarmKey(swarmKey)
-        let models = await this.getModels();
-        this.models = models;
+        let {crud, upload} = await this.getModels();
+        this.models = crud;
+        this.uploadModels = upload;
         this.setupBasicReads(dispatch);
+        this.setupFileActions(dispatch);
     }
 
     private authLink = setContext((_, { headers }) => {
@@ -215,12 +223,24 @@ export class WorkhubClient {
                         directives
                         def
                     }
+                    uploadTypes {
+                        name
+                        directives
+                        def
+                    }
                 }
             `
         })
         
     
-        return result.data.crudTypes
+        return {crud: result.data.crudTypes, upload: result.data.uploadTypes}
+    }
+
+    setupFileActions(dispatch: any){
+        this.actions = {
+            ...this.actions,
+            ...UPLOAD(this.uploadModels, this.client, dispatch)
+        }
     }
 
     setupBasicReads(dispatch: any){
@@ -285,6 +305,18 @@ export class WorkhubClient {
                 name: storeName
             })
             return result.data.storeLayout;
+        }
+
+        this.actions['getBucketLayout'] = async (storeName: string, bucketName: string) => {
+            let result = await this.query(`
+                query GetBucketLayout($storeName: String, $bucketName: String){
+                    bucketLayout(storeName: $storeName, bucketName: $bucketName)
+                }
+            `, {
+                storeName,
+                bucketName
+            })
+            return result.data.bucketLayout;
         }
 
         this.actions['getIntegrationStores'] = async () => {
